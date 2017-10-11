@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<data>
+  <bgp xmlns="http://openconfig.net/models/bgp">
+    <neighbors>
+      <neighbor>
+	<config>
+	  <neighbor-address xmlns="http://openconfig.net/models/ip">172.16.11.201</neighbor-address>
+	</config>
+      </neighbor>
+    </neighbors>
+  </bgp>
+</data>
