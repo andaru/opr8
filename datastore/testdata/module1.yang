@@ -1,0 +1,68 @@
+module module1 {
+  namespace "urn:mod1";
+  prefix "mod1";
+
+  import "ietf-inet-types" { prefix inet; }
+  import "ietf-yang-types" { prefix yang; }
+
+  typedef host-name-or-ip-address {
+    type string;
+  }
+
+  container system {
+    leaf host-name {
+      type string;
+    }
+
+    leaf-list domain-name-servers {
+      type host-name-or-ip-address;
+    }
+  }
+
+  container interfaces {
+    list interface {
+      key interface-name;
+
+      leaf interface-name {
+	type leafref {
+	  path "../config/interface-name";
+	}
+      }
+
+      container config {
+	leaf interface-name { type string; }
+	choice interface-type {
+	  case svi {
+	    leaf ip-address {
+	      type inet:ip-address;
+	    }
+	  }
+	  case ethernet {
+	    leaf ethernet-address {
+	      type yang:mac-address;
+	    }
+	  }
+	}
+      }
+
+      container multi-choice {
+	choice a {
+	  leaf a-foo { type string; }
+	}
+	choice b {
+	  leaf b-foo { type string; }
+	}
+      }
+
+      container status {
+	config false;
+	uses interface-type-common;
+      }
+
+      grouping interface-type-common {
+      }
+
+    }
+  }
+
+}
