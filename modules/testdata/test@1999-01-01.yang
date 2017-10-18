@@ -1,0 +1,16 @@
+module test {
+  namespace urn:opr8:modules:test:test;
+  prefix test;
+
+  revision 1999-01-01;
+
+  typedef host-name {
+    type string;
+  }
+
+  // Note: The "system" container is not included in this "old"
+  // revision of the "test" module, adding the ability to test the
+  // stated claim that RootEntry will scan the "latest" version of
+  // modules matching the namespace. A test assertion for the presence
+  // of the system container provides a proof for the mentioned claim.
+}

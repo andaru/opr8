@@ -1,0 +1,24 @@
+module test {
+  namespace urn:opr8:modules:test:test;
+  prefix test;
+  yang-version 1.1;
+
+  revision 2017-01-01;
+
+  typedef host-name {
+    type string;
+  }
+
+  container system {
+    leaf host-name {
+      type host-name;
+    }
+
+    container domain {
+      leaf-list resolver {
+	type host-name;
+      }
+    }
+  }
+
+}
