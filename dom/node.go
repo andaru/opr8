@@ -12,26 +12,102 @@ type Node interface {
 	Namer
 	Valuer
 	ValueSetter
+	// ChildValue returns the content value of the first Text child
+	// node. Returns the empty string if node has no NodeTypeText
+	// child nodes.
 	ChildValue() string
 
 	NodeType() NodeType
+	// Parent returns the node's parent. This value will be nil if
+	// Node represents a Document or is the root of a disconnected
+	// subtree.
 	Parent() Node
+
+	// OwnerDocument returns the node's owning Document node. This
+	// returns nil if the node is "disconnected".
 	OwnerDocument() Document
 
+	// FirstChild returns the node's first child node, or nil if there
+	// are no children.
 	FirstChild() Node
+	// LastChild returns the node's last child node, or nil if the
+	// node has no children.
 	LastChild() Node
+	// NextSibling returns the node's next sibling, or nil if the node
+	// is the last child of its parent.
 	NextSibling() Node
+	// PreviousSibling returns the node's previous sibling, or nil if
+	// the node is the first child of its parent.
 	PreviousSibling() Node
 
+	ChildrenByName(xml.Name) []Node
+	ChildByName(xml.Name) Node
+
+	// AppendChild appends the provided Node as a child. Returns an
+	// error if adding such a child node to this node would be illegal
+	// by the DOM's rules on tree layout.
 	AppendChild(Node) error
+	// PrependChild prepends the provided Node as a child. Returns an
+	// error if adding such a child node to this node would be illegal
+	// by the DOM's rules on tree layout.
 	PrependChild(Node) error
-	InsertChildAfter(child, before Node) error
-	InsertChildBefore(child, before Node) error
+	// InsertChildAfter inserts the provided child node after ref. If
+	// ref is nil, append child instead. Returns an error if adding
+	// such a child node to this node would be illegal by the DOM's
+	// rules on tree layout.
+	InsertChildAfter(child, ref Node) error
+	// InsertChildBefore inserts the provided child node before ref.
+	// If ref is nil, prepend child instead. Returns an error if
+	// adding such a child node to this node would be illegal by the
+	// DOM's rules on tree layout.
+	InsertChildBefore(child, ref Node) error
 
 	nodePtr
 }
 
-// Namer is a type with an XML name to offer
+// NodeProvider is an interface providing a context Node.
+type NodeProvider interface {
+	// Node returns the context node.
+	//
+	// This value typically represents the context node in a document
+	// query or a node iterator's current position.
+	Node() Node
+}
+
+// ParentNodeProvider is an interface providing a context Node's parent Node.
+type ParentNodeProvider interface {
+	// Parent returns the context node's parent, which may be nil if
+	// the context node is a Document (i.e., its NodeType is
+	// NodeTypeDocument), or the context node is the root of a subtree
+	// not connected to a document.
+	Parent() Node
+}
+
+// OwnerDocumentProvider is an interface providing a Node's owner document.
+type OwnerDocumentProvider interface {
+	// OwnerDocument returns the node's owning Document node. This
+	// returns nil if the node is "disconnected".
+	OwnerDocument() Document
+}
+
+// SiblingProvider is an interface providing access to the next and
+// previous siblings of a context Node. This supports both Node an
+// Attr siblings.
+type SiblingProvider interface {
+	// NextSibling returns the context node's next sibling, or nil if
+	// there are no following siblings.
+	NextSibling() Node
+	// PreviousSibling returns the context node's previous sibling, or
+	// nil if there are no previous siblings.
+	PreviousSibling() Node
+}
+
+// NodeSet is a collection of Node
+type NodeSet []Node
+
+// Namer is an object with a XML name.
+//
+// Examples of such types in the DOM include Element and Attr nodes.
 type Namer interface {
 	// Name returns the object's XML name
 	Name() xml.Name
@@ -225,13 +301,22 @@ func (n *node) PreviousSibling() Node {
 	return nil
 }
 
-func (n *node) Child(name xml.Name) Node {
-	for it := n.firstChild; it != nil; it = it.nextSib {
-		if namer, ok := it.value.(Namer); ok && namer.Name() == name {
-			return it
-		}
+func (n *node) ChildByName(name xml.Name) Node {
+	nodeset := n.ChildrenByName(name)
+	if nodeset == nil {
+		return nil
 	}
-	return nil
+	return nodeset[0]
+}
+
+func (n *node) ChildrenByName(name xml.Name) (nodeset []Node) {
+	iterChildren(n, func(it *node) error {
+		if namer, ok := it.value.(Namer); ok && namer.Name() == name {
+			nodeset = append(nodeset, it)
+		}
+		return nil
+	})
+	return
 }
 
 func (n *node) AppendChild(child Node) error {
